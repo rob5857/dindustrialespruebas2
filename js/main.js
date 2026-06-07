@@ -620,9 +620,14 @@ window.addEventListener('scroll', () => {
 // ── FIRE CANVAS ANIMATION ──────────────────────────────────────
 (function initFireCanvas() {
   const canvas = document.getElementById('fireCanvas');
+  if (!canvas) return;
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const isMobile = window.matchMedia('(max-width: 768px)').matches;
   const ctx = canvas.getContext('2d');
   let particles = [];
   let W, H;
+  let rafId = null;
+  let visible = true;
 
   function resize() {
     W = canvas.width = window.innerWidth;
@@ -679,8 +684,9 @@ window.addEventListener('scroll', () => {
     };
   }
 
-  // Create particles
-  for (let i = 0; i < 220; i++) {
+  // Create particles (lighter load on mobile)
+  const smokeCount = isMobile ? 80 : 220;
+  for (let i = 0; i < smokeCount; i++) {
     const p = new Particle();
     p.y = Math.random() * H; // spread initial positions
     particles.push(p);
@@ -709,8 +715,10 @@ window.addEventListener('scroll', () => {
       ctx.save();
       ctx.globalAlpha = Math.max(0, this.life * 0.9);
       ctx.fillStyle = '#ffd60a';
-      ctx.shadowColor = '#ff6b35';
-      ctx.shadowBlur = 6;
+      if (!isMobile) {
+        ctx.shadowColor = '#ff6b35';
+        ctx.shadowBlur = 6;
+      }
       ctx.beginPath();
       ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
       ctx.fill();
@@ -718,7 +726,8 @@ window.addEventListener('scroll', () => {
     };
   }
 
-  for (let i = 0; i < 80; i++) {
+  const emberCount = isMobile ? 25 : 80;
+  for (let i = 0; i < emberCount; i++) {
     const e = new Ember();
     e.y = Math.random() * H;
     particles.push(e);
@@ -727,32 +736,66 @@ window.addEventListener('scroll', () => {
   function animate() {
     ctx.clearRect(0, 0, W, H);
     particles.forEach(p => { p.update(); p.draw(); });
-    requestAnimationFrame(animate);
+    rafId = requestAnimationFrame(animate);
   }
-  animate();
+
+  function start() { if (!rafId) animate(); }
+  function stop()  { if (rafId) { cancelAnimationFrame(rafId); rafId = null; } }
+
+  if (reducedMotion) {
+    // Single static frame, no loop
+    ctx.clearRect(0, 0, W, H);
+    particles.forEach(p => p.draw());
+    return;
+  }
+
+  // Pause when hero canvas is off-screen (huge CPU/GPU savings on scroll)
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        visible = e.isIntersecting;
+        if (visible) start(); else stop();
+      });
+    }, { threshold: 0 });
+    io.observe(canvas);
+  }
+  // Pause when tab hidden
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) stop(); else if (visible) start();
+  });
+
+  start();
 })();
 
 // ── COUNTER ANIMATION ──────────────────────────────────────────
 function animateCounters() {
-  document.querySelectorAll('.stat-num').forEach(el => {
-    const target = parseInt(el.dataset.count, 10);
-    const duration = 2000;
-    const start = performance.now();
-    function update(now) {
-      const elapsed = now - start;
-      const progress = Math.min(elapsed / duration, 1);
-      const ease = 1 - Math.pow(1 - progress, 3);
-      el.textContent = Math.round(target * ease);
-      if (progress < 1) requestAnimationFrame(update);
+  const els = Array.from(document.querySelectorAll('.stat-num'));
+  if (!els.length) return;
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const targets = els.map(el => parseInt(el.dataset.count, 10) || 0);
+
+  if (reduced) {
+    els.forEach((el, i) => { el.textContent = targets[i]; });
+    return;
+  }
+
+  const duration = 1200;
+  const start = performance.now();
+  function tick(now) {
+    const progress = Math.min((now - start) / duration, 1);
+    const ease = 1 - Math.pow(1 - progress, 3);
+    for (let i = 0; i < els.length; i++) {
+      els[i].textContent = Math.round(targets[i] * ease);
     }
-    requestAnimationFrame(update);
-  });
+    if (progress < 1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
 }
 
 // Trigger counter when stats section is visible
 const statsObs = new IntersectionObserver(entries => {
   entries.forEach(e => { if (e.isIntersecting) { animateCounters(); statsObs.disconnect(); } });
-}, { threshold: 0.5 });
+}, { threshold: 0.3, rootMargin: '0px 0px -10% 0px' });
 const statsSection = document.getElementById('stats');
 if (statsSection) statsObs.observe(statsSection);
 
