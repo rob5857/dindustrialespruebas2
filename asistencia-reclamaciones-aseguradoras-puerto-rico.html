@@ -114,6 +114,7 @@
       <img src="logo3.png" alt="Desarrollos Industriales LLC" class="logo-img" />
     </a>
     <ul class="nav-menu" id="navMenu">
+      <li><a href="index.html" class="nav-link"><i class="fas fa-home"></i> <span>Inicio</span></a></li>
       <li class="has-dropdown">
         <a href="index.html#servicios" class="nav-link nav-dropdown-toggle"><i class="fas fa-fire-extinguisher"></i> <span>Servicios</span> <i class="fas fa-chevron-down nav-chevron"></i></a>
         <ul class="nav-dropdown">
@@ -131,6 +132,12 @@
       <li><a href="https://wa.me/19733920478?text=Hola%2C%20necesito%20asistencia%20con%20una%20reclamaci%C3%B3n%20de%20seguro." class="nav-link nav-whatsapp-mobile" target="_blank" rel="noopener"><i class="fab fa-whatsapp"></i> <span>WhatsApp</span></a></li>
     </ul>
     <div class="nav-actions">
+      <a href="fire-insurance-claim-puerto-rico.html" class="lang-toggle" aria-label="Switch to English" title="Switch to English">
+        <img src="images/us.png" alt="English" class="lang-flag-img" width="42" height="42" />
+      </a>
+      <button class="theme-toggle" id="themeToggle" aria-label="Cambiar tema">
+        <i class="fas fa-sun" id="themeIcon"></i>
+      </button>
       <a href="https://wa.me/19733920478?text=Hola%2C%20necesito%20asistencia%20con%20una%20reclamaci%C3%B3n%20de%20seguro." class="btn btn-whatsapp" target="_blank" rel="noopener">
         <i class="fab fa-whatsapp"></i> WhatsApp
       </a>
@@ -283,8 +290,9 @@
 <div class="di-assistant-panel" id="diAssistantPanel"
      role="dialog" aria-modal="false" aria-labelledby="diAssistantTitle" aria-hidden="true">
   <div class="di-assistant-panel-head">
-    <img src="images/avatar.png" alt="" aria-hidden="true"
-         class="di-assistant-panel-avatar" width="48" height="48" decoding="async" loading="lazy" />
+    <span class="di-assistant-panel-avatar-wrap" aria-hidden="true">
+      <img src="images/avatar.png" alt="" class="di-assistant-panel-avatar" width="48" height="48" decoding="async" loading="lazy" />
+    </span>
     <div>
       <h3 class="di-assistant-panel-title" id="diAssistantTitle">Asistente de Reclamaciones DI</h3>
       <p class="di-assistant-panel-sub">En línea · Respuesta inmediata</p>
@@ -299,9 +307,6 @@
     <div class="di-assistant-actions">
       <a class="di-assistant-btn di-assistant-btn--call" href="tel:+19733920478"><i class="fas fa-phone-alt"></i> <span>Llamar ahora — (973) 392-0478</span></a>
       <a class="di-assistant-btn di-assistant-btn--wa" href="https://wa.me/19733920478?text=Hola%2C%20vi%20la%20p%C3%A1gina%20de%20Desarrollos%20Industriales%20LLC.%20Necesito%20asistencia%20con%20una%20reclamaci%C3%B3n%20de%20seguro." target="_blank" rel="noopener"><i class="fab fa-whatsapp"></i> <span>WhatsApp</span></a>
-      <a class="di-assistant-btn" href="https://wa.me/19733920478?text=Hola%2C%20quiero%20enviar%20fotos%20del%20da%C3%B1o%20de%20mi%20propiedad%20para%20recibir%20orientaci%C3%B3n." target="_blank" rel="noopener"><i class="fas fa-camera"></i> <span>Enviar fotos del daño</span></a>
-      <a class="di-assistant-btn" href="restauracion-incendios-puerto-rico.html"><i class="fas fa-fire"></i> <span>Daños por fuego / humo</span></a>
-      <a class="di-assistant-btn" href="restauracion-inundacion-puerto-rico.html"><i class="fas fa-water"></i> <span>Daños por agua / inundación</span></a>
     </div>
     <p class="di-assistant-foot">Disponible 24/7 · Puerto Rico</p>
   </div>
@@ -328,6 +333,19 @@
   }
   var hdr=document.getElementById('header');
   if(hdr) window.addEventListener('scroll',function(){hdr.classList.toggle('scrolled',window.scrollY>60);});
+  // Theme toggle (persisted via localStorage)
+  var tt=document.getElementById('themeToggle'),ti=document.getElementById('themeIcon');
+  if(tt&&ti){
+    var sv=localStorage.getItem('dindustriales-theme')||'dark';
+    document.documentElement.setAttribute('data-theme',sv);
+    ti.className=sv==='light'?'fas fa-moon':'fas fa-sun';
+    tt.addEventListener('click',function(){
+      var c=document.documentElement.getAttribute('data-theme'),n=c==='light'?'dark':'light';
+      document.documentElement.setAttribute('data-theme',n);
+      localStorage.setItem('dindustriales-theme',n);
+      ti.className=n==='light'?'fas fa-moon':'fas fa-sun';
+    });
+  }
   // DI Assistant
   var widget=document.getElementById('diAssistant'),launcher=document.getElementById('diAssistantLauncher'),
       panel=document.getElementById('diAssistantPanel'),bubble=document.getElementById('diAssistantBubble'),
