@@ -768,36 +768,42 @@ window.addEventListener('scroll', () => {
 })();
 
 // ── COUNTER ANIMATION ──────────────────────────────────────────
-function animateCounters() {
+// On mobile/tablet (≤1024) and on reduced-motion preference the numbers are
+// rendered statically to avoid any rAF cost on lower-end devices.
+(function initCounters() {
   const els = Array.from(document.querySelectorAll('.stat-num'));
   if (!els.length) return;
-  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const targets = els.map(el => parseInt(el.dataset.count, 10) || 0);
 
-  if (reduced) {
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const isMobileOrTablet = window.matchMedia('(max-width: 1024px)').matches;
+
+  if (reduced || isMobileOrTablet) {
     els.forEach((el, i) => { el.textContent = targets[i]; });
     return;
   }
 
-  const duration = 1200;
-  const start = performance.now();
-  function tick(now) {
-    const progress = Math.min((now - start) / duration, 1);
-    const ease = 1 - Math.pow(1 - progress, 3);
-    for (let i = 0; i < els.length; i++) {
-      els[i].textContent = Math.round(targets[i] * ease);
+  function animate() {
+    const duration = 1200;
+    const start = performance.now();
+    function tick(now) {
+      const progress = Math.min((now - start) / duration, 1);
+      const ease = 1 - Math.pow(1 - progress, 3);
+      for (let i = 0; i < els.length; i++) {
+        els[i].textContent = Math.round(targets[i] * ease);
+      }
+      if (progress < 1) requestAnimationFrame(tick);
     }
-    if (progress < 1) requestAnimationFrame(tick);
+    requestAnimationFrame(tick);
   }
-  requestAnimationFrame(tick);
-}
 
-// Trigger counter when stats section is visible
-const statsObs = new IntersectionObserver(entries => {
-  entries.forEach(e => { if (e.isIntersecting) { animateCounters(); statsObs.disconnect(); } });
-}, { threshold: 0.3, rootMargin: '0px 0px -10% 0px' });
-const statsSection = document.getElementById('stats');
-if (statsSection) statsObs.observe(statsSection);
+  const statsSection = document.getElementById('stats');
+  if (!statsSection) { animate(); return; }
+  const statsObs = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) { animate(); statsObs.disconnect(); } });
+  }, { threshold: 0.3, rootMargin: '0px 0px -10% 0px' });
+  statsObs.observe(statsSection);
+})();
 
 // ── FIRE RADAR MAP (Leaflet + NASA FIRMS) ─────────────────────
 function initFireMap() {
